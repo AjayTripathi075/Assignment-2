@@ -15,7 +15,8 @@ namespace Assignment_2.Models
         public long FileSize { get; set; }
         public string MimeType { get; set; }
         public string Hash { get; set; }
-        public List<FileAttribute> FileAttribute { get; set; }
+        
+        public List<FileAttribute> FileAttributes { get; set; }
         [JsonIgnore]
         public Guid BatchId { get; set; }
 

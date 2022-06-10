@@ -12,7 +12,7 @@ namespace Assignment_2.Models
         public int Id { get; set; }
         public string User { get; set; }
         [JsonIgnore]
-        public Guid BatchId { get; set; }
+        public int AclId { get; set; }
 
     }
 }

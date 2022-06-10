@@ -28,6 +28,7 @@ namespace Assignment_2.Controllers
             var businessUnits = await _batchRepository.GetBusinessUnitsAsync();
             return Ok(businessUnits);
         }
+       
 
         [HttpGet]
         [Route("[controller]/{buId:int}"), ActionName("GetBusinessUnit")]
@@ -50,7 +51,7 @@ namespace Assignment_2.Controllers
 
         }
 
-
+      
 
     }
 }

@@ -5,21 +5,17 @@ using Assignment_2.Repositories.IRepository;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using Assignment_2.Validation.DateConverter;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace Assignment_2
 {
@@ -36,61 +32,56 @@ namespace Assignment_2
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(option =>
+            {
+                option.JsonSerializerOptions.Converters.Add(new DateConverter());
+            });
             services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Startup>());
             services.AddDbContext<AppDbContext>(option =>
             {
                 option.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
             });
-
+            services.AddScoped<IBatchRepository, BatchRepository>();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Assignment_2", Version = "v1" });
                 c.EnableAnnotations();
 
+                // Set the comments path for the Swagger JSON and UI.
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+
+
             });
-            services.AddScoped<IBatchRepository, BatchRepository>();
+            services.AddAutoMapper(typeof(Startup).Assembly);
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Latest)
-                
-         .ConfigureApiBehaviorOptions(options => {
+           .ConfigureApiBehaviorOptions(options => {
             options.InvalidModelStateResponseFactory = actionContext => {
-        
-          return CustomErrorResponse(actionContext);
+           return CustomErrorResponse(actionContext);
        };
-   });
-        }
+       
+    });
 
-        //private IActionResult CustomErrorResponse(ActionContext actionContext)
-        //{
-        //    //BadRequestObjectResult is class found Microsoft.AspNetCore.Mvc and is inherited from ObjectResult.    
-
-        //    return new BadRequestObjectResult(actionContext.ModelState
-        //     .Where(modelError => modelError.Value.Errors.Count > 0)
-        //     .Select(modelError => new Error
-        //     {
-        //         Source = modelError.Key,
-        //         Description = modelError.Value.Errors.FirstOrDefault().ErrorMessage
-        //     }).ToList());
-
-        //}
+}
         private IActionResult CustomErrorResponse(ActionContext actionContext)
         {
-            //BadRequestObjectResult is class found Microsoft.AspNetCore.Mvc and is inherited from ObjectResult.    
-            //Rest code is linq.    
-            return new BadRequestObjectResult(actionContext.ModelState
-             .Where(modelError => modelError.Value.Errors.Count > 0)
-             .Select(modelError => new CorRelation
-             {
-                 CorRelationId = Guid.NewGuid(),
-                 Errors = new List<Error>()
-                 {
-                     new Error{Source = modelError.Key,
-                     Description = modelError.Value.Errors.FirstOrDefault().ErrorMessage }
-                 }
-             }).ToList());
+            var errorresult = string.Join('\n', actionContext.ModelState.Values.Where(modelError => modelError.Errors.Count > 0)
 
-        }
-
+            .SelectMany(modelError => modelError.Errors)
+            .Select(modelError => modelError.ErrorMessage));
+            var errs = actionContext.ModelState.Values.SelectMany(v => v.Errors).ToList();
+            var error = actionContext.ModelState.Select(modelError => new Error
+            {
+                Source = modelError.Key,
+                Description=modelError.Value.Errors.FirstOrDefault().ErrorMessage
+            });
+            return new BadRequestObjectResult(new
+            {
+                correlationId = Guid.NewGuid(),
+                Errors = error
+            }); ;
+     }
 
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

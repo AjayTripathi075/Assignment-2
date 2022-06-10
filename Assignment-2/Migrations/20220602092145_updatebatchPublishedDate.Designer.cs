@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Assignment_2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20220527111740_initialCreate")]
-    partial class initialCreate
+    [Migration("20220602092145_updatebatchPublishedDate")]
+    partial class updatebatchPublishedDate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -20,6 +20,24 @@ namespace Assignment_2.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("ProductVersion", "5.0.17")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+            modelBuilder.Entity("Assignment_2.Models.Acl", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BatchId")
+                        .IsUnique();
+
+                    b.ToTable("Acls");
+                });
 
             modelBuilder.Entity("Assignment_2.Models.Attribute", b =>
                 {
@@ -53,7 +71,7 @@ namespace Assignment_2.Migrations
                     b.Property<DateTime>("BatchPublishedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("BusinessUnitId")
+                    b.Property<int>("BusinessUnitId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("ExpiryDate")
@@ -120,9 +138,6 @@ namespace Assignment_2.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<Guid>("BatchId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("FileId")
                         .HasColumnType("int");
 
@@ -146,15 +161,15 @@ namespace Assignment_2.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<Guid>("BatchId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("AclId")
+                        .HasColumnType("int");
 
                     b.Property<string>("GroupName")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BatchId");
+                    b.HasIndex("AclId");
 
                     b.ToTable("ReadGroup");
                 });
@@ -166,23 +181,32 @@ namespace Assignment_2.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<Guid>("BatchId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("AclId")
+                        .HasColumnType("int");
 
                     b.Property<string>("User")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BatchId");
+                    b.HasIndex("AclId");
 
                     b.ToTable("ReadUser");
+                });
+
+            modelBuilder.Entity("Assignment_2.Models.Acl", b =>
+                {
+                    b.HasOne("Assignment_2.Models.Batch", null)
+                        .WithOne("Acl")
+                        .HasForeignKey("Assignment_2.Models.Acl", "BatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Assignment_2.Models.Attribute", b =>
                 {
                     b.HasOne("Assignment_2.Models.Batch", null)
-                        .WithMany("Attribute")
+                        .WithMany("Attributes")
                         .HasForeignKey("BatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -192,7 +216,9 @@ namespace Assignment_2.Migrations
                 {
                     b.HasOne("Assignment_2.Models.BusinessUnit", "BusinessUnit")
                         .WithMany()
-                        .HasForeignKey("BusinessUnitId");
+                        .HasForeignKey("BusinessUnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("BusinessUnit");
                 });
@@ -209,7 +235,7 @@ namespace Assignment_2.Migrations
             modelBuilder.Entity("Assignment_2.Models.FileAttribute", b =>
                 {
                     b.HasOne("Assignment_2.Models.File", null)
-                        .WithMany("FileAttribute")
+                        .WithMany("FileAttributes")
                         .HasForeignKey("FileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -217,36 +243,41 @@ namespace Assignment_2.Migrations
 
             modelBuilder.Entity("Assignment_2.Models.ReadGroup", b =>
                 {
-                    b.HasOne("Assignment_2.Models.Batch", null)
-                        .WithMany("ReadGroup")
-                        .HasForeignKey("BatchId")
+                    b.HasOne("Assignment_2.Models.Acl", null)
+                        .WithMany("ReadGroups")
+                        .HasForeignKey("AclId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
             modelBuilder.Entity("Assignment_2.Models.ReadUser", b =>
                 {
-                    b.HasOne("Assignment_2.Models.Batch", null)
-                        .WithMany("ReadUser")
-                        .HasForeignKey("BatchId")
+                    b.HasOne("Assignment_2.Models.Acl", null)
+                        .WithMany("ReadUsers")
+                        .HasForeignKey("AclId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Assignment_2.Models.Acl", b =>
+                {
+                    b.Navigation("ReadGroups");
+
+                    b.Navigation("ReadUsers");
+                });
+
             modelBuilder.Entity("Assignment_2.Models.Batch", b =>
                 {
-                    b.Navigation("Attribute");
+                    b.Navigation("Acl");
+
+                    b.Navigation("Attributes");
 
                     b.Navigation("Files");
-
-                    b.Navigation("ReadGroup");
-
-                    b.Navigation("ReadUser");
                 });
 
             modelBuilder.Entity("Assignment_2.Models.File", b =>
                 {
-                    b.Navigation("FileAttribute");
+                    b.Navigation("FileAttributes");
                 });
 #pragma warning restore 612, 618
         }

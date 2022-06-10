@@ -1,6 +1,9 @@
 ﻿using Assignment_2.Models;
 using Assignment_2.Models.Data;
+using Assignment_2.Models.Data.Dto;
+using Assignment_2.Models.Error;
 using Assignment_2.Repositories.IRepository;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -51,12 +54,14 @@ namespace Assignment_2.Repositories
 
         public async Task<Batch> GetBatchAsync(Guid batchId)
         {
-            return await _db.Batch.Include(x=> x.BusinessUnit).Include(x=>x.ReadUser).Include(x=> x.ReadGroup).Include(x=>x.Attribute).Include(x=>x.Files).ThenInclude(x=>x.FileAttribute).FirstOrDefaultAsync(x => x.BatchId == batchId);
+            
+            return await _db.Batch.Include(x => x.BusinessUnit).Include(x => x.Acl).ThenInclude(x=>x.ReadUsers).Include(x => x.Acl).ThenInclude(x => x.ReadGroups).Include(x => x.Attributes).Include(x => x.Files).ThenInclude(x => x.FileAttributes).FirstOrDefaultAsync(x => x.BatchId == batchId);
         }
 
         public async Task<List<Batch>> GetBatchsAsync()
         {
-            return await _db.Batch.Include(x=> x.BusinessUnit).Include(x=>x.ReadUser).Include(x=> x.ReadGroup).Include(x=>x.Attribute).Include(x=>x.Files).ThenInclude(x=>x.FileAttribute).ToListAsync();
+            return await _db.Batch.Include(x=>x.BusinessUnit).Include(x => x.Acl).ThenInclude(x => x.ReadUsers).Include(x => x.Acl).ThenInclude(x=>x.ReadUsers).Include(x => x.Acl).ThenInclude(x => x.ReadGroups).Include(x => x.Attributes).Include(x => x.Files).ThenInclude(x => x.FileAttributes).ToListAsync();
+
         }
 
         public async Task<BusinessUnit> GetBusinessUnitAsync(int buId)
@@ -71,19 +76,19 @@ namespace Assignment_2.Repositories
 
         public async Task<bool> ExistsbusinessUnit(string Name)
         {
-           return await _db.BusinessUnit.AnyAsync(x=>x.Description == Name);
-          
+            return await _db.BusinessUnit.AnyAsync(x => x.Description == Name);
+
         }
 
-        public async Task<Batch> updateBatchAsync(Guid batchId, Batch request)
+        public async Task<Batch> UpdateBatchAsync(Guid batchId, Batch request)
         {
             var existingbatch = await GetBatchAsync(batchId);
             if (existingbatch != null)
             {
                 existingbatch.BusinessUnit.Description = request.BusinessUnit.Description;
-                existingbatch.ReadUser = request.ReadUser;
-                existingbatch.ReadGroup = request.ReadGroup;
-                existingbatch.Attribute = request.Attribute;
+                existingbatch.Acl.ReadUsers = request.Acl.ReadUsers;
+                existingbatch.Acl.ReadGroups = request.Acl.ReadGroups;
+                existingbatch.Attributes = request.Attributes;
                 existingbatch.ExpiryDate = request.ExpiryDate;
                 existingbatch.Files = request.Files;
                 await _db.SaveChangesAsync();
@@ -92,14 +97,9 @@ namespace Assignment_2.Repositories
             return null;
 
         }
-        //public async task<batch> addbatchdetails(string businessunit, batch request)
-        //{
-        //    var existingbusinessunit = await _db.businessunit.anyasync(x => x.description == businessunit);
 
-        //    var batch = await _db.batch.addasync(request);
-        //    await _db.savechangesasync();
-        //    return batch.entity;
-        //}
-
+   
     }
 }
+
+

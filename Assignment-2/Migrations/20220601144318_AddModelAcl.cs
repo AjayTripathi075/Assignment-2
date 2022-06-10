@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Assignment_2.Migrations
 {
-    public partial class initialCreate : Migration
+    public partial class AddModelAcl : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -26,7 +26,7 @@ namespace Assignment_2.Migrations
                 {
                     BatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    BusinessUnitId = table.Column<int>(type: "int", nullable: true),
+                    BusinessUnitId = table.Column<int>(type: "int", nullable: false),
                     BatchPublishedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -38,7 +38,26 @@ namespace Assignment_2.Migrations
                         column: x => x.BusinessUnitId,
                         principalTable: "BusinessUnit",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Acls",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Acls", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Acls_Batch_BatchId",
+                        column: x => x.BatchId,
+                        principalTable: "Batch",
+                        principalColumn: "BatchId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -92,16 +111,16 @@ namespace Assignment_2.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     GroupName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    BatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    AclId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ReadGroup", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ReadGroup_Batch_BatchId",
-                        column: x => x.BatchId,
-                        principalTable: "Batch",
-                        principalColumn: "BatchId",
+                        name: "FK_ReadGroup_Acls_AclId",
+                        column: x => x.AclId,
+                        principalTable: "Acls",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -112,16 +131,16 @@ namespace Assignment_2.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     User = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    BatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    AclId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ReadUser", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ReadUser_Batch_BatchId",
-                        column: x => x.BatchId,
-                        principalTable: "Batch",
-                        principalColumn: "BatchId",
+                        name: "FK_ReadUser_Acls_AclId",
+                        column: x => x.AclId,
+                        principalTable: "Acls",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -133,8 +152,7 @@ namespace Assignment_2.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Key = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FileId = table.Column<int>(type: "int", nullable: false),
-                    BatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    FileId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -146,6 +164,12 @@ namespace Assignment_2.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Acls_BatchId",
+                table: "Acls",
+                column: "BatchId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Attribute_BatchId",
@@ -168,14 +192,14 @@ namespace Assignment_2.Migrations
                 column: "BatchId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ReadGroup_BatchId",
+                name: "IX_ReadGroup_AclId",
                 table: "ReadGroup",
-                column: "BatchId");
+                column: "AclId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ReadUser_BatchId",
+                name: "IX_ReadUser_AclId",
                 table: "ReadUser",
-                column: "BatchId");
+                column: "AclId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -194,6 +218,9 @@ namespace Assignment_2.Migrations
 
             migrationBuilder.DropTable(
                 name: "Files");
+
+            migrationBuilder.DropTable(
+                name: "Acls");
 
             migrationBuilder.DropTable(
                 name: "Batch");
